@@ -24,34 +24,34 @@ resource "aws_vpc" "this" {
 # Internet Gateway
 ###################
 resource "aws_internet_gateway" "this" {
-    count = 1
+    count = "${length(var.public_subnets) > 0 ? 1 : 0}" 
 
     vpc_id = "${local.vpc_id}"
 
-    tags = "${merge(map("Name", format("%s", var.vpc_name)), var.tags)}"
+    tags = "${merge(map("Name", format("%s", var.vpc_name)), var.tags)}" 
 }
 
 ################
 # Publiс routes
 ################
 resource "aws_route_table" "public" {
-  count = 1
+    count = "${var.one_public_route_table_per_az ? length(var.public_subnets) : 1}" 
 
-  vpc_id = "${local.vpc_id}"
+    vpc_id = "${local.vpc_id}"
 
-  tags = "${merge(map("Name", format("%s-${var.public_subnet_suffix}", var.vpc_name)), var.tags)}"
+    tags = "${merge(map("Name", format("%s", var.vpc_name)), var.tags)}" 
 }
 
 resource "aws_route" "public_internet_gateway" {
-  count = 1
+    count = "${var.one_public_route_table_per_az ? length(var.public_subnets) : 1}" 
 
-  route_table_id         = "${aws_route_table.public.id}"
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = "${aws_internet_gateway.this.id}"
+    route_table_id         = "${var.one_public_route_table_per_az ? element(aws_route_table.public.*.id, count.index) : element(aws_route_table.public.*.id, 0)}" 
+    destination_cidr_block = "0.0.0.0/0"
+    gateway_id             = "${aws_internet_gateway.this.id}"
 
-  timeouts {
-    create = "5m"
-  }
+    timeouts {
+        create = "5m"
+    }
 }
 
 ###################
@@ -105,7 +105,7 @@ resource "aws_route_table_association" "public" {
     count = "${length(var.public_subnets)}"
 
     subnet_id      = "${element(aws_subnet.public.*.id, count.index)}"
-    route_table_id = "${aws_route_table.public.id}"
+    route_table_id = "${!var.one_public_route_table_per_az ? element(aws_route_table.public.*.id, 0) : element(aws_route_table.public.*.id, count.index)}"
 }
 
 resource "aws_route_table_association" "private" {

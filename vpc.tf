@@ -11,11 +11,15 @@ module "vpc" {
     azs             = ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]
     public_subnets  = ["10.0.0.0/24", "10.0.1.0/24", "10.0.2.0/24"]
     private_subnets  = ["10.0.100.0/24", "10.0.101.0/24", "10.0.102.0/24"]
-    enable_nat_instance = true
-    single_nat_instance = true
+    enable_nat_gateway = true 
+    enable_nat_instance = false 
 
-    enable_nat_gateway = false
+    single_nat_gateway = true
+    single_nat_instance = false 
+
+    one_nat_gateway_per_az = false 
     one_nat_instance_per_az = false 
+    one_public_route_table_per_az = true
 
     aws_key_name = "key_for_new_infras"
     tags = {
