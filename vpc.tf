@@ -19,7 +19,7 @@ module "vpc" {
 
     one_nat_gateway_per_az = false 
     one_nat_instance_per_az = false 
-    one_public_route_table_per_az = true
+    one_public_route_table_per_az = false 
 
     aws_key_name = "key_for_new_infras"
     tags = {

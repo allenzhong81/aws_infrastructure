@@ -84,7 +84,6 @@ resource "aws_subnet" "private" {
 # There are so many routing tables as the largest amount of subnets of each type (really?)
 #################
 resource "aws_route_table" "private" {
-    ### !!!! consider number of nat gateway/instance
     count = "${local.nat_count}"
     vpc_id = "${local.vpc_id}"
 
