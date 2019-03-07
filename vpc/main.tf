@@ -126,11 +126,11 @@ resource "aws_route_table_association" "private" {
 #
 # but then when count of aws_eip.nat.*.id is zero, this would throw a resource not found error on aws_eip.nat.*.id.
 locals {
-    nat_gateway_ips = "${split(",", (var.reuse_nat_ips ? join(",", var.external_nat_ip_ids) : join(",", aws_eip.nat.*.id)))}"
+    nat_ips = "${split(",", (var.reuse_nat_ips ? join(",", var.external_nat_ip_ids) : join(",", aws_eip.nat.*.id)))}"
 }
 
 resource "aws_eip" "nat" {
-    count = "${local.nat_count}"
+    count = "${!var.reuse_nat_ips ? local.nat_count : 0}"
     vpc = true
 
     tags = "${merge(map("Name", format("%s-%s", var.vpc_name, element(var.azs, ((var.single_nat_gateway || var.single_nat_instance) ? 0 : count.index)))), var.tags)}"
@@ -139,7 +139,7 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "this" {
     count = "${var.enable_nat_gateway ? local.nat_gateway_count : 0}"
 
-    allocation_id = "${element(local.nat_gateway_ips, (var.single_nat_gateway ? 0 : count.index))}"
+    allocation_id = "${element(local.nat_ips, (var.single_nat_gateway ? 0 : count.index))}"
     subnet_id     = "${element(aws_subnet.public.*.id, (var.single_nat_gateway ? 0 : count.index))}"
 
     tags = "${merge(map("Name", format("%s-%s", var.vpc_name, element(var.azs, (var.single_nat_gateway ? 0 : count.index)))), var.tags)}"
@@ -237,9 +237,9 @@ resource "aws_instance" "nat" {
 }
 
 resource "aws_eip_association" "nat_eip_assoc" {
-  count = "${var.enable_nat_instance ? local.nat_count : 0}"
-  instance_id = "${element(aws_instance.nat.*.id, count.index)}"
-  allocation_id = "${element(aws_eip.nat.*.id, count.index)}"
+    count = "${var.enable_nat_instance ? local.nat_count : 0}"
+    instance_id = "${element(aws_instance.nat.*.id, count.index)}"
+    allocation_id = "${element(local.nat_ips, (var.single_nat_gateway ? 0 : count.index))}"
 }
 
 resource "aws_route" "private_nat_instance" {
