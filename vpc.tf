@@ -43,9 +43,12 @@ module "alb" {
   alb_name = "allen-alb"
   vpc_id   = "${module.vpc.vpc_id}"
 
-  alb_public_subnets = "${module.vpc.public_subnets_cidr_blocks}"
+  alb_public_subnets = "${module.vpc.public_subnets_ids}"
 }
 
 output "eips" {
   value = ["${module.vpc.eips}"]
+}
+output "public_alb_id" {
+  value = "${module.alb.public_alb_id}"
 }
