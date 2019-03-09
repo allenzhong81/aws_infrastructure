@@ -20,11 +20,11 @@ module "vpc" {
 
   reuse_nat_ips       = true
   external_nat_ip_ids = ["${aws_eip.eips.*.id}"]
-  enable_nat_gateway  = true
-  enable_nat_instance = false
+  enable_nat_gateway  = false 
+  enable_nat_instance = true 
 
-  single_nat_gateway  = true
-  single_nat_instance = false
+  single_nat_gateway  = false 
+  single_nat_instance = true 
 
   one_nat_gateway_per_az        = false
   one_nat_instance_per_az       = false
@@ -43,12 +43,13 @@ module "alb" {
   alb_name = "allen-alb"
   vpc_id   = "${module.vpc.vpc_id}"
 
-  alb_public_subnets = "${module.vpc.public_subnets_ids}"
+  alb_public_subnets_ids = "${module.vpc.public_subnets_ids}"
 }
 
 output "eips" {
   value = ["${module.vpc.eips}"]
 }
-output "public_alb_id" {
-  value = "${module.alb.public_alb_id}"
+
+output "public_alb_arn" {
+  value = "${module.alb.public_alb_arn}"
 }

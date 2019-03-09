@@ -19,7 +19,7 @@ resource "aws_security_group" "public_alb_sg" {
 resource "aws_alb" "public_alb" {
   name            = "${var.alb_name}"
   security_groups = ["${aws_security_group.public_alb_sg.id}"]
-  subnets         = ["${var.alb_public_subnets}"]
+  subnets         = ["${var.alb_public_subnets_ids}"]
 }
 
 resource "aws_alb_target_group" "default" {
@@ -29,7 +29,7 @@ resource "aws_alb_target_group" "default" {
   vpc_id   = "${var.vpc_id}"
 }
 
-resource "aws_alb_listener" "name" {
+resource "aws_alb_listener" "this" {
   load_balancer_arn = "${aws_alb.public_alb.arn}"
   port              = "80"
   protocol          = "HTTP"

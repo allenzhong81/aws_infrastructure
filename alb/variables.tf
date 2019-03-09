@@ -6,7 +6,7 @@ variable "alb_name" {
   description = "Alb name"
 }
 
-variable "alb_public_subnets" {
+variable "alb_public_subnets_ids" {
   default     = []
   description = "A list of subnet IDs to attach to the LB. Subnets cannot be updated for Load Balancers of type network."
 }
