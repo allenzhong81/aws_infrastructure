@@ -62,4 +62,8 @@ variable "health_check_path" {
   description = "Health Check Path"
   value = "/health" 
 }
+variable "https_enabled" {
+  description = "Enable HTTPS"
+  value = false 
+}
 

@@ -25,7 +25,6 @@ resource "aws_security_group" "ecs_service" {
   }
 }
 
-//Health check configuration needed!!!!!!
 resource "aws_alb_target_group" "service" {
   name     = "${vars.app_name}-tg"
   port     = 80
@@ -43,13 +42,27 @@ resource "aws_alb_target_group" "service" {
   }
 }
 
-resource "aws_alb_listener" "service" {
+resource "aws_alb_listener" "https_service" {
+  count = "${vars.https_enabled ? 1 : 0}"
   load_balancer_arn = "${vars.alb_arn}"
   path              = "${vars.service_path}"
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
   certificate_arn   = "${vars.certificate_arn}"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = "${aws_alb_target_group.service.arn}"
+  }
+}
+
+resource "aws_alb_listener" "http_service" {
+  count = "${!vars.https_enabled ? 1 : 0}"
+  load_balancer_arn = "${vars.alb_arn}"
+  path              = "${vars.service_path}"
+  port              = "80"
+  protocol          = "HTTP"
 
   default_action {
     type             = "forward"
