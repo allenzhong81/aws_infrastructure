@@ -1,112 +1,58 @@
-##################################
-## IAM
-##################################
-resource "aws_iam_role" "ecs_service" {
-  name = "${vars.ecs_role_name}"
-  assume_role_policy = <<EOF
-    {
-      "Version": "2008-10-17",
-      "Statement": [
-        {
-          "Sid": "",
-          "Effect": "Allow",
-          "Principal": {
-            "Service": "ecs.amazonaws.com"
-          },
-          "Action": "sts:AssumeRole"
-        }
-      ]
-    }
-  EOF
-}
+resource "aws_security_group" "ecs_service" {
+  vpc_id      = "${vars.vpc_id}"
+  name        = "tf-ecs-service-sg"
+  description = "Allows access to container"
 
-resource "aws_iam_role_policy" "ecs_service" {
-  name = "${vars.ecs_role_policy_name}"
-  role = "${aws_iam_role.ecs_service.name}"
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-	policy = <<EOF
-		{
-			"Version": "2012-10-17",
-			"Statement": [
-				{
-					"Effect": "Allow",
-					"Action": [
-						"ec2:Describe*",
-						"elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
-						"elasticloadbalancing:DeregisterTargets",
-						"elasticloadbalancing:Describe*",
-						"elasticloadbalancing:RegisterInstancesWithLoadBalancer",
-						"elasticloadbalancing:RegisterTargets"
-					],
-					"Resource": "*"
-				}
-			]
-		}
-	EOF
-}
+  ingress {
+    from_port   = 0 
+    to_port     = 65532 
+    protocol    = "tcp"
+    security_groups = ["${vars.public_alb_sg_group_ids}"]
+  }
 
-/*
-* IAM service role
-*/
-data "aws_iam_policy_document" "ecs_service_role" {
-  statement {
-    effect = "Allow"
-    actions = ["sts:AssumeRole"]
-    principals {
-      type = "Service"
-      identifiers = ["ecs.amazonaws.com"]
-    }
+  ingress {
+    from_port   = 0 
+    to_port     = 65532 
+    protocol    = "tcp"
+    security_groups = ["${aws_security_group.ecs_service.id}"]
   }
 }
 
-resource "aws_iam_role" "ecs_role" {
-  name               = "ecs_role"
-  assume_role_policy = "${data.aws_iam_policy_document.ecs_service_role.json}"
+resource "aws_alb_target_group" "service" {
+  name     = "${vars.app_name}-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = "${var.vpc_id}"
 }
 
-data "aws_iam_policy_document" "ecs_service_policy" {
-  statement {
-    effect = "Allow"
-    resources = ["*"]
-    actions = [
-      "elasticloadbalancing:Describe*",
-      "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
-      "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
-      "ec2:Describe*",
-      "ec2:AuthorizeSecurityGroupIngress"
-    ]
+resource "aws_alb_listener" "service" {
+  load_balancer_arn = "${vars.alb_arn}"
+
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = "${vars.certificate_arn}"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = "${aws_alb_target_group.service.arn}"
   }
 }
 
-/* ecs service scheduler role */
-resource "aws_iam_role_policy" "ecs_service_role_policy" {
-  name   = "ecs_service_role_policy"
-  policy = "${data.aws_iam_policy_document.ecs_service_policy.json}"
-  role   = "${aws_iam_role.ecs_role.id}"
-}
 
-/* role that the Amazon ECS container agent and the Docker daemon can assume */
-resource "aws_iam_role" "ecs_execution_role" {
-  name               = "ecs_task_execution_role"
-  assume_role_policy = "${file("${path.module}/policies/ecs-task-execution-role.json")}"
-}
-
-resource "aws_iam_role_policy" "ecs_execution_role_policy" {
-  name   = "ecs_execution_role_policy"
-  policy = "${file("${path.module}/policies/ecs-execution-role-policy.json")}"
-  role   = "${aws_iam_role.ecs_execution_role.id}"
-}
-
-
-##################################
-## ECS 
-##################################
 resource "aws_ecs_cluster" "main" {
-  name = "${vars.name}"
+  name = "${vars.app_name}"
 }
 
 data "template_file" "task_definition" {
-  template = "${file("${path.module}/task-definition.json")}"
+  template = "${file("${path.module}/tasks/task-definition.json")}"
 
   vars {
     image_url        = "${vars.image_url}"
@@ -117,14 +63,13 @@ data "template_file" "task_definition" {
   }
 }
 
-
 resource "aws_ecs_task_definition" "this" {
   family                = "${vars.task_definition_family}"
   container_definitions = "${data.template_file.task_definition.rendered}"
   requires_compatibilities =  ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = "256"
-  memory                   = "512"
+  cpu                      = "${vars.cpu}"
+  memory                   = "${vars.memory}"
   execution_role_arn       = "${aws_iam_role.ecs_execution_role.arn}"
   task_role_arn            = "${aws_iam_role.ecs_execution_role.arn}"
 }
@@ -133,22 +78,17 @@ resource "aws_ecs_service" "this" {
   name            = "${vars.service_name}"
   cluster         = "${aws_ecs_cluster.main.id}"
   task_definition = "${aws_ecs_task_definition.this.arn}"
-  desired_count   = 3
+  desired_count   = "${vars.desired_count}" 
   launch_type     = "FARGATE"
 
   load_balancer {
-    target_group_arn = "${aws_alb_target_group.test.id}"
+    target_group_arn = "${aws_alb_target_group.service.id}"
     container_name   = "${vars.container_name}"
-    container_port   = "8000"
+    container_port   = "${vars.container_port}"
   }
 
   network_configuration {
     security_groups = ["${aws_security_group.ecs_service.id}"]
-    subnets         = ["${aws_subnet.main.*.id}"]
+    subnets         = ["${vars.subnets}"] 
   }
-
-  depends_on = [
-    "aws_iam_role_policy.ecs_service",
-    "aws_alb_listener.front_end",
-  ]
 }

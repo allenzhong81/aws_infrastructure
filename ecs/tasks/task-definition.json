@@ -5,10 +5,11 @@
     "name": "${container_name}",
     "portMappings": [
       {
-        "containerPort": 8000,
-        "hostPort": 8000
+        "containerPort": "${container_port}",
+        "hostPort": "${host_port}"
       }
     ],
+    "networkMode": "awsvpc",
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
