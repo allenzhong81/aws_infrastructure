@@ -58,4 +58,8 @@ variable "vpc_id" {
 variable "service_path" {
   description = "Service Path" 
 }
+variable "health_check_path" {
+  description = "Health Check Path"
+  value = "/health" 
+}
 
