@@ -11,20 +11,21 @@ resource "aws_security_group" "ecs_service" {
   }
 
   ingress {
-    from_port   = 0 
-    to_port     = 65532 
-    protocol    = "tcp"
+    from_port       = 0
+    to_port         = 65532
+    protocol        = "tcp"
     security_groups = ["${vars.public_alb_sg_group_ids}"]
   }
 
   ingress {
-    from_port   = 0 
-    to_port     = 65532 
-    protocol    = "tcp"
+    from_port       = 0
+    to_port         = 65532
+    protocol        = "tcp"
     security_groups = ["${aws_security_group.ecs_service.id}"]
   }
 }
 
+//Health check configuration needed!!!!!!
 resource "aws_alb_target_group" "service" {
   name     = "${vars.app_name}-tg"
   port     = 80
@@ -34,7 +35,7 @@ resource "aws_alb_target_group" "service" {
 
 resource "aws_alb_listener" "service" {
   load_balancer_arn = "${vars.alb_arn}"
-
+  path              = "${vars.service_path}"
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
@@ -45,7 +46,6 @@ resource "aws_alb_listener" "service" {
     target_group_arn = "${aws_alb_target_group.service.arn}"
   }
 }
-
 
 resource "aws_ecs_cluster" "main" {
   name = "${vars.app_name}"
@@ -64,9 +64,9 @@ data "template_file" "task_definition" {
 }
 
 resource "aws_ecs_task_definition" "this" {
-  family                = "${vars.task_definition_family}"
-  container_definitions = "${data.template_file.task_definition.rendered}"
-  requires_compatibilities =  ["FARGATE"]
+  family                   = "${vars.task_definition_family}"
+  container_definitions    = "${data.template_file.task_definition.rendered}"
+  requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "${vars.cpu}"
   memory                   = "${vars.memory}"
@@ -78,7 +78,7 @@ resource "aws_ecs_service" "this" {
   name            = "${vars.service_name}"
   cluster         = "${aws_ecs_cluster.main.id}"
   task_definition = "${aws_ecs_task_definition.this.arn}"
-  desired_count   = "${vars.desired_count}" 
+  desired_count   = "${vars.desired_count}"
   launch_type     = "FARGATE"
 
   load_balancer {
@@ -89,6 +89,6 @@ resource "aws_ecs_service" "this" {
 
   network_configuration {
     security_groups = ["${aws_security_group.ecs_service.id}"]
-    subnets         = ["${vars.subnets}"] 
+    subnets         = ["${vars.subnets}"]
   }
 }

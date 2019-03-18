@@ -55,4 +55,7 @@ variable "alb_arn" {
 variable "vpc_id" {
   description = "Vpc id" 
 }
+variable "service_path" {
+  description = "Service Path" 
+}
 
