@@ -12,15 +12,15 @@ resource "aws_security_group" "ecs_service" {
 
   ingress {
     from_port       = 0
-    to_port         = 65532
-    protocol        = "tcp"
+    to_port         = 0 
+    protocol        = "-1"
     security_groups = ["${vars.public_alb_sg_group_ids}"]
   }
 
   ingress {
     from_port       = 0
-    to_port         = 65532
-    protocol        = "tcp"
+    to_port         = 0 
+    protocol        = "-1" 
     security_groups = ["${aws_security_group.ecs_service.id}"]
   }
 }
