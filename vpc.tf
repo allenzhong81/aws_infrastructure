@@ -20,11 +20,11 @@ module "vpc" {
 
   reuse_nat_ips       = true
   external_nat_ip_ids = ["${aws_eip.eips.*.id}"]
-  enable_nat_gateway  = false 
-  enable_nat_instance = true 
+  enable_nat_gateway  = false
+  enable_nat_instance = true
 
-  single_nat_gateway  = false 
-  single_nat_instance = true 
+  single_nat_gateway  = false
+  single_nat_instance = true
 
   one_nat_gateway_per_az        = false
   one_nat_instance_per_az       = false
@@ -44,6 +44,39 @@ module "alb" {
   vpc_id   = "${module.vpc.vpc_id}"
 
   alb_public_subnets_ids = "${module.vpc.public_subnets_ids}"
+}
+
+module "ecs" {
+  source = "./ecs"
+
+  app_name = "my-service"
+
+  vpc_id = "${module.vpc.vpc_id}"
+
+  service_path = "/*"
+
+  health_check_path = "/"
+
+  https_enabled = false
+
+  image_url = "nignx"
+
+  service_name = "my_service"
+
+  task_definition_family = "my_task_family"
+
+  container_name = "my_container"
+
+  # container_port = 80
+  # host_port = 80
+
+  task_name = "my_service_task"
+  public_alb_sg_group_ids = "${module.alb.alb_target_group_id}"
+  subnets = ["${module.vpc.private_subnets_ids}"]
+  alb_arn = "${module.alb.public_alb_arn}"
+  log_group_region = "ap-southeast-1"
+  log_group_name = "my_service"
+  log_group_prefix = "my_service"
 }
 
 output "eips" {

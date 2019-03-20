@@ -1,12 +1,13 @@
 [
   {
-    "essential": true,
     "image": "${image_url}",
     "name": "${container_name}",
+    "cpu": ${cpu},
+    "memory": ${memory},
     "portMappings": [
       {
-        "containerPort": "${container_port}",
-        "hostPort": "${host_port}"
+        "containerPort": ${container_port},
+        "hostPort": ${host_port}
       }
     ],
     "networkMode": "awsvpc",

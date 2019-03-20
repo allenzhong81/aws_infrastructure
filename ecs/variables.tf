@@ -3,8 +3,6 @@ variable "app_name" {
 }
 variable "image_url" {
 }
-variable "container_name" {
-}
 variable "log_group_region" {
 }
 variable "log_group_name" {
@@ -60,10 +58,30 @@ variable "service_path" {
 }
 variable "health_check_path" {
   description = "Health Check Path"
-  value = "/health" 
+  default = "/health" 
 }
 variable "https_enabled" {
   description = "Enable HTTPS"
-  value = false 
+  default = false 
 }
+
+variable "certificate_arn" {
+  description = "certificate arn" 
+  default = ""
+}
+
+variable "public_alb_sg_group_ids" {
+  description = "security group ids of defining in public alb" 
+}
+
+variable "task_definition_family" {
+  description = "Task definition family" 
+}
+
+variable "service_name" {
+  description = "Service Name" 
+}
+
+
+
 
