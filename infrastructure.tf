@@ -71,7 +71,7 @@ module "ecs" {
   # host_port = 80
 
   task_name = "my_service_task"
-  public_alb_sg_group_ids = "${module.alb.alb_target_group_id}"
+  public_alb_sg_group_ids = "${module.alb.alb_security_group_id}"
   subnets = ["${module.vpc.private_subnets_ids}"]
   alb_arn = "${module.alb.public_alb_arn}"
   log_group_region = "ap-southeast-1"

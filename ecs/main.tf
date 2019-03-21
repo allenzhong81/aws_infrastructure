@@ -34,7 +34,7 @@ resource "aws_alb_target_group" "service" {
   health_check {
     interval            = 6
     path                = "${var.health_check_path}"
-    protocol            = "http"
+    protocol            = "HTTP"
     timeout             = 5
     healthy_threshold   = 2
     unhealthy_threshold = 2
@@ -71,8 +71,24 @@ resource "aws_alb_listener" "http_service" {
 }
 
 resource "aws_alb_listener_rule" "http_service" {
-  # listener_arn = "${!var.https_enabled ? aws_alb_listener.http_service.arn : aws_alb_listener.https_service.arn}"
+  count        = "${!var.https_enabled ? 1 : 0}"
   listener_arn = "${aws_alb_listener.http_service.arn}"
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = "${aws_alb_target_group.service.arn}"
+  }
+
+  condition {
+    field  = "path-pattern"
+    values = ["${var.service_path}"]
+  }
+}
+
+resource "aws_alb_listener_rule" "https_service" {
+  count        = "${var.https_enabled ? 1 : 0}"
+  listener_arn = "${aws_alb_listener.https_service.arn}"
   priority     = 100
 
   action {
@@ -110,6 +126,8 @@ resource "aws_ecs_task_definition" "service_definition" {
   family                   = "${var.task_definition_family}"
   container_definitions    = "${data.template_file.task_definition.rendered}"
   requires_compatibilities = ["FARGATE"]
+  cpu = "${var.cpu}"
+  memory = "${var.memory}"
   network_mode             = "awsvpc"
   execution_role_arn       = "${aws_iam_role.ecs_execution_role.arn}"
   task_role_arn            = "${aws_iam_role.ecs_execution_role.arn}"
@@ -126,21 +144,20 @@ resource "aws_ecs_service" "ecs_service" {
   desired_count   = "${var.desired_count}"
   launch_type     = "FARGATE"
 
-
   load_balancer {
     target_group_arn = "${aws_alb_target_group.service.id}"
     container_name   = "${var.container_name}"
     container_port   = "${var.container_port}"
   }
 
-
   network_configuration {
     security_groups = ["${aws_security_group.ecs_service.id}"]
     subnets         = ["${var.subnets}"]
   }
 
-depends_on = [
+  depends_on = [
     "aws_ecs_task_definition.service_definition",
+    "aws_iam_role.ecs_role",
+    "aws_iam_role.ecs_execution_role",
   ]
 }
-

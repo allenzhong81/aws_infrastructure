@@ -55,6 +55,7 @@ variable "vpc_id" {
 }
 variable "service_path" {
   description = "Service Path" 
+  default = "*"
 }
 variable "health_check_path" {
   description = "Health Check Path"
