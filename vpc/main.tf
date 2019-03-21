@@ -254,7 +254,7 @@ resource "aws_route" "private_nat_instance" {
 
   route_table_id         = "${element(aws_route_table.private.*.id, (var.single_nat_instance ? 0 : count.index))}"
   destination_cidr_block = "0.0.0.0/0"
-  instance_id            = "${var.single_nat_instance ? aws_instance.nat.id : element(aws_instance.nat.*.id,  count.index)}"
+  instance_id            = "${var.single_nat_instance ? element(aws_instance.nat.*.id, 0) : element(aws_instance.nat.*.id,  count.index)}"
 
   timeouts {
     create = "5m"

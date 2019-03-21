@@ -24,11 +24,11 @@ module "vpc" {
   enable_nat_instance = true
 
   single_nat_gateway  = false
-  single_nat_instance = true
+  single_nat_instance = false 
 
   one_nat_gateway_per_az        = false
-  one_nat_instance_per_az       = false
-  one_public_route_table_per_az = false
+  one_nat_instance_per_az       = true 
+  one_public_route_table_per_az = true 
 
   aws_key_name = "key_for_new_infras"
 
@@ -59,7 +59,7 @@ module "ecs" {
 
   https_enabled = false
 
-  image_url = "nignx"
+  image_url = "nginx"
 
   service_name = "my_service"
 
@@ -72,6 +72,7 @@ module "ecs" {
 
   task_name = "my_service_task"
   public_alb_sg_group_ids = "${module.alb.alb_security_group_id}"
+  ecs_service_egress_sg_ids = ["${module.vpc.nat_security_group_ids}"]
   subnets = ["${module.vpc.private_subnets_ids}"]
   alb_arn = "${module.alb.public_alb_arn}"
   log_group_region = "ap-southeast-1"

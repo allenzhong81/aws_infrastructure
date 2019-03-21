@@ -83,6 +83,12 @@ variable "service_name" {
   description = "Service Name" 
 }
 
+variable "ecs_service_egress_sg_ids" {
+  description = "ecs_service_egress_sg_ids" 
+  default = []
+}
+
+
 
 
 

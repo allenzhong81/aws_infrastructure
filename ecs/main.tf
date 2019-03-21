@@ -3,19 +3,19 @@ resource "aws_security_group" "ecs_service" {
   name        = "tf-ecs-service-sg"
   description = "Allows access to container"
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   ingress {
     from_port       = 0
     to_port         = 0
     protocol        = "-1"
     security_groups = ["${var.public_alb_sg_group_ids}"]
   }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    security_groups = ["${var.ecs_service_egress_sg_ids}"]
+  }
+
 
   # ingress {
   #   from_port       = 0
@@ -30,7 +30,7 @@ resource "aws_alb_target_group" "service" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = "${var.vpc_id}"
-
+  target_type = "ip"
   health_check {
     interval            = 6
     path                = "${var.health_check_path}"
@@ -156,6 +156,8 @@ resource "aws_ecs_service" "ecs_service" {
   }
 
   depends_on = [
+    "aws_alb_listener_rule.http_service",
+    "aws_alb_listener_rule.https_service",
     "aws_ecs_task_definition.service_definition",
     "aws_iam_role.ecs_role",
     "aws_iam_role.ecs_execution_role",

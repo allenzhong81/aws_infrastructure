@@ -36,13 +36,13 @@ resource "aws_alb_target_group" "default" {
   vpc_id   = "${var.vpc_id}"
 }
 
-resource "aws_alb_listener" "this" {
-  load_balancer_arn = "${aws_alb.public_alb.arn}"
-  port              = "80"
-  protocol          = "HTTP"
+# resource "aws_alb_listener" "this" {
+#   load_balancer_arn = "${aws_alb.public_alb.arn}"
+#   port              = "80"
+#   protocol          = "HTTP"
 
-  default_action {
-    type             = "forward"
-    target_group_arn = "${aws_alb_target_group.default.arn}"
-  }
-}
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = "${aws_alb_target_group.default.arn}"
+#   }
+# }
