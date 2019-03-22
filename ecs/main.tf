@@ -116,9 +116,9 @@ data "template_file" "task_definition" {
     host_port        = "${var.host_port}"
     cpu              = "${var.cpu}"
     memory           = "${var.memory}"
-    log_group_region = "${var.log_group_region}"
-    log_group_name   = "${var.log_group_name}"
-    log_group_prefix = "${var.log_group_prefix}"
+   log_group_region = "${var.log_group_region}"
+   log_group_name   = "${var.log_group_name}"
+   log_group_prefix = "${var.log_group_prefix}"
   }
 }
 
@@ -143,7 +143,7 @@ resource "aws_ecs_service" "ecs_service" {
   task_definition = "${aws_ecs_task_definition.service_definition.arn}"
   desired_count   = "${var.desired_count}"
   launch_type     = "FARGATE"
-
+  health_check_grace_period_seconds = 120
   load_balancer {
     target_group_arn = "${aws_alb_target_group.service.id}"
     container_name   = "${var.container_name}"

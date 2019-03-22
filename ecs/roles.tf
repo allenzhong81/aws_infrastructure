@@ -101,3 +101,9 @@ resource "aws_iam_role_policy" "ecs_execution_role_policy" {
   policy = "${file("${path.module}/policies/ecs-execution-role-policy.json")}"
   role   = "${aws_iam_role.ecs_execution_role.id}"
 }
+
+resource "aws_iam_policy_attachment" "managed-container-role" {
+  name = "managed-container-attached-policy"
+  roles = ["${aws_iam_role.ecs_execution_role.name}"]
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role" 
+}

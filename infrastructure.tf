@@ -53,7 +53,7 @@ module "ecs" {
 
   vpc_id = "${module.vpc.vpc_id}"
 
-  service_path = "/*"
+  service_path = "*"
 
   health_check_path = "/"
 
@@ -67,8 +67,8 @@ module "ecs" {
 
   container_name = "my_container"
 
-  # container_port = 80
-  # host_port = 80
+  container_port = 80
+  host_port = 80
 
   task_name = "my_service_task"
   public_alb_sg_group_ids = "${module.alb.alb_security_group_id}"
@@ -76,8 +76,8 @@ module "ecs" {
   subnets = ["${module.vpc.private_subnets_ids}"]
   alb_arn = "${module.alb.public_alb_arn}"
   log_group_region = "ap-southeast-1"
-  log_group_name = "my_service"
-  log_group_prefix = "my_service"
+  log_group_name = "/ecs/my_service"
+  log_group_prefix = "ecs"
 }
 
 output "eips" {
