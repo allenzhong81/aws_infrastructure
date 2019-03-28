@@ -46,6 +46,13 @@ module "alb" {
   alb_public_subnets_ids = "${module.vpc.public_subnets_ids}"
 }
 
+module "log_group" {
+  source = "./log_group"
+  log_group_region = "ap-southeast-1"
+  log_group_name = "/ecs/myservice"
+  log_stream_prefix = "ecs"
+}
+
 module "ecs" {
   source = "./ecs"
 
@@ -75,9 +82,9 @@ module "ecs" {
   ecs_service_egress_sg_ids = ["${module.vpc.nat_security_group_ids}"]
   subnets = ["${module.vpc.private_subnets_ids}"]
   alb_arn = "${module.alb.public_alb_arn}"
-  log_group_region = "ap-southeast-1"
-  log_group_name = "/ecs/my_service"
-  log_group_prefix = "ecs"
+  log_group_region = "${module.log_group.log_group_region}"
+  log_group_name = "${module.log_group.log_group_name}"
+  log_stream_prefix = "${module.log_group.log_stream_prefix}"
 }
 
 output "eips" {

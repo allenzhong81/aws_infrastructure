@@ -7,7 +7,7 @@ variable "log_group_region" {
 }
 variable "log_group_name" {
 }
-variable "log_group_prefix" {
+variable "log_stream_prefix" {
 }
 variable "container_port" {
   default = 80

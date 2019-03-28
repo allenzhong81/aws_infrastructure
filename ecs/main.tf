@@ -118,7 +118,7 @@ data "template_file" "task_definition" {
     memory           = "${var.memory}"
    log_group_region = "${var.log_group_region}"
    log_group_name   = "${var.log_group_name}"
-   log_group_prefix = "${var.log_group_prefix}"
+   log_stream_prefix = "${var.log_stream_prefix}"
   }
 }
 
