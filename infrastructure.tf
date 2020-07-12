@@ -66,7 +66,7 @@ module "ecs" {
 
   https_enabled = false
 
-  image_url = "hello-world"
+  image_url = "nginx"
 
   service_name = "my_service"
 
@@ -87,6 +87,16 @@ module "ecs" {
   log_stream_prefix = "${module.log_group.log_stream_prefix}"
 }
 
+module "ecr" {
+  source = "./ecr"
+  repository_name = "simple-project"
+}
+
+# module "codecommit" {
+#   source = "./codecommit"
+#   repository_name = "simple_project"
+# }
+
 module "codedeploy" {
   source                     = "git::https://github.com/allenzhong81/terraform-aws-codedeploy-for-ecs.git"
   name                       = "allen-deploy"
@@ -106,8 +116,58 @@ module "codedeploy" {
   # description                      = "This is example"
 
   tags = {
-    Environment = "prod"
+    Environment = "test"
   }
+}
+
+module "build" {
+    source              = "./codebuild"
+    namespace           = "eg"
+    stage               = "staging"
+    name                = "build_nodeapp"
+
+    # https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-available.html
+    build_image         = "aws/codebuild/standard:2.0"
+    build_compute_type  = "BUILD_GENERAL1_SMALL"
+    build_timeout       = 60
+
+    # These attributes are optional, used as ENV variables when building Docker images and pushing them to ECR
+    # For more info:
+    # http://docs.aws.amazon.com/codebuild/latest/userguide/sample-docker.html
+    # https://www.terraform.io/docs/providers/aws/r/codebuild_project.html
+
+    privileged_mode     = true
+    aws_region          = "ap-southeast-2"
+    aws_account_id      = "704029807031"
+    image_repo_name     = "nodeapp"
+    image_tag           = "latest"
+
+    # Optional extra environment variables
+    environment_variables = [{
+        name  = "TASK_DEFINITION"
+        value = "arn:aws:ecs:ap-southeast-2:704029807031:task-definition/my_task_family"
+      },
+      {
+        name  = "CONTAINER_NAME"
+        value = "my_container"
+      }]
+}
+
+variable "github_oauthtoken" {
+  type = string
+}
+
+module "codepipeline" {
+  source = "./codepipeline"
+  codepipeline_artifact_bucket_name = "nodeapp-artifact"
+  codepipeline_role_name = "nodeapp_codepipeline_role"
+  codepipeline_role_policy_name = "nodeapp_codepipeline_role_policy"
+  codepipeline_name = "nodeapp_codepipeline"
+  codecommit_repo_name = "simple_project"
+  codebuild_name = module.build.codebuild_project_name
+  codedeploy_application_name = module.codedeploy.codedeploy_app_name
+  github_oauthtoken = var.github_oauthtoken
+  codedeploy_deploymentgroup_name = module.codedeploy.codedeploy_app_name
 }
 
 output "eips" {
